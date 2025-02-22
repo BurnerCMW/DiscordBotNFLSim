@@ -1,0 +1,36 @@
+name: Fetch Bluesky Posts & Post to Discord
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # Runs every 5 minutes
+  workflow_dispatch:  # Allows manual execution
+
+jobs:
+  run-r-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.2'  # Ensure this version supports your packages
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev python3 python3-pip
+
+      - name: Install R dependencies
+        run: |
+          Rscript -e 'install.packages("remotes", repos="http://cran.rstudio.com")'
+          Rscript -e 'remotes::install_cran(c("reticulate", "httr"))'
+
+      - name: Set up authentication and run script
+        env:
+          BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          echo "Starting Bluesky to Discord script..."
+          Rscript bluesky_to_discord.R
+          echo "Finished execution."
