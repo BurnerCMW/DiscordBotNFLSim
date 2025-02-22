@@ -9,13 +9,18 @@ jobs:
   run-r-script:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (Full Clone)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensures all files are pulled
+
+      - name: Debug - List Repository Files
+        run: ls -R  # Check if the script exists
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.2'  # Ensure this version supports your packages
+          r-version: '4.3'  # Ensure this version supports your packages
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev python3 python3-pip
@@ -25,6 +30,15 @@ jobs:
           Rscript -e 'install.packages("remotes", repos="http://cran.rstudio.com")'
           Rscript -e 'remotes::install_cran(c("reticulate", "httr"))'
 
+      - name: Ensure script is executable
+        run: chmod +x bluesky_to_discord.R
+
+      - name: Debug - Print Current Directory
+        run: pwd  # Print working directory
+
+      - name: Debug - List Files Again
+        run: ls -R  # Double-check if script exists
+
       - name: Set up authentication and run script
         env:
           BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
@@ -32,5 +46,5 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           echo "Starting Bluesky to Discord script..."
-          Rscript bluesky_to_discord.R
+          Rscript ./bluesky_to_discord.R  # Explicit path
           echo "Finished execution."
